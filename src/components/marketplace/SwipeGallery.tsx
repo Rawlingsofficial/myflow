@@ -1,3 +1,4 @@
+// src/components/marketplace/SwipeGallery.tsx
 'use client';
 
 import { useState } from 'react';

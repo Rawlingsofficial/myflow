@@ -4,9 +4,10 @@
 import { useState } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Bell, BellOff, Check } from "lucide-react";
+import { Bell, MailOpen, Inbox } from "lucide-react";
 import { useSupabaseWithAuth } from "@/lib/supabase/client";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 type Notification = {
   id: string;
@@ -16,22 +17,13 @@ type Notification = {
   created_at: string;
 };
 
-const TYPE_LABELS: Record<string, string> = {
-  lease_assigned: "Lease",
-  lease_ended: "Lease",
-  maintenance_update: "Maintenance",
-  invoice_created: "Invoice",
-  payment_received: "Payment",
-  general: "Notice",
-};
-
-const TYPE_COLORS: Record<string, string> = {
-  lease_assigned: "bg-blue-100 text-blue-700",
-  lease_ended: "bg-gray-100 text-gray-600",
-  maintenance_update: "bg-orange-100 text-orange-700",
-  invoice_created: "bg-purple-100 text-purple-700",
-  payment_received: "bg-emerald-100 text-emerald-700",
-  general: "bg-gray-100 text-gray-600",
+const TYPE_CONFIG: Record<string, { label: string; className: string }> = {
+  lease_assigned: { label: "Lease", className: "bg-blue-50 text-blue-700 border-blue-100" },
+  lease_ended: { label: "Lease", className: "bg-slate-50 text-slate-600 border-slate-100" },
+  maintenance_update: { label: "Fix", className: "bg-amber-50 text-amber-700 border-amber-100" },
+  invoice_created: { label: "Billing", className: "bg-purple-50 text-purple-700 border-purple-100" },
+  payment_received: { label: "Payment", className: "bg-emerald-50 text-emerald-700 border-emerald-100" },
+  general: { label: "Notice", className: "bg-slate-50 text-slate-600 border-slate-100" },
 };
 
 export function NotificationsPageClient({
@@ -44,22 +36,33 @@ export function NotificationsPageClient({
   const supabase = useSupabaseWithAuth();
 
   async function markRead(id: string) {
+    const originalItems = [...items];
     setItems((prev) =>
       prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
     );
-    await supabase
+
+    const { error } = await supabase
       .from("notifications")
       .update({ is_read: true })
       .eq("id", id);
+
+    if (error) {
+       setItems(originalItems);
+       toast.error("Failed to update notification.");
+    }
   }
 
   async function markAllRead() {
+    if (markingAll) return;
     setMarkingAll(true);
     try {
-      await supabase
+      const { error } = await supabase
         .from("notifications")
         .update({ is_read: true })
         .eq("is_read", false);
+
+      if (error) throw error;
+
       setItems((prev) => prev.map((n) => ({ ...n, is_read: true })));
       toast.success("All notifications marked as read.");
     } catch {
@@ -72,69 +75,84 @@ export function NotificationsPageClient({
   const unreadCount = items.filter((n) => !n.is_read).length;
 
   return (
-    <div className="px-4 pt-4 pb-24 max-w-lg mx-auto space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="px-4 pt-6 pb-24 space-y-6">
+      <header className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Notifications</h1>
-          {unreadCount > 0 && (
-            <p className="text-sm text-muted-foreground">
-              {unreadCount} unread
-            </p>
-          )}
+          <h1 className="text-2xl font-bold text-[#1F3A5F]">Alerts</h1>
+          <p className="text-sm text-slate-500">
+            {unreadCount > 0 ? `You have ${unreadCount} unread messages` : "You're all caught up"}
+          </p>
         </div>
         {unreadCount > 0 && (
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={markAllRead}
             disabled={markingAll}
+            className="text-[#2BBE9A] hover:text-[#2BBE9A] hover:bg-[#2BBE9A]/5 font-bold text-xs gap-1.5 h-8 px-2"
           >
-            <Check className="w-3.5 h-3.5 mr-1.5" />
+            <MailOpen className="w-3.5 h-3.5" />
             Mark all read
           </Button>
         )}
-      </div>
+      </header>
 
       {items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <BellOff className="w-8 h-8 text-muted-foreground mb-3" />
-          <p className="font-medium">No notifications</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            You're all caught up.
+        <div className="flex flex-col items-center justify-center py-24 text-center bg-white rounded-2xl border border-dashed border-slate-200">
+          <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+            <Inbox className="w-8 h-8 text-slate-300" />
+          </div>
+          <h3 className="text-lg font-bold text-[#1F3A5F] mb-1">No alerts</h3>
+          <p className="text-sm text-slate-500 max-w-[200px]">
+            You&apos;ll receive notifications about your lease and payments here.
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {items.map((n) => (
             <div
               key={n.id}
               onClick={() => !n.is_read && markRead(n.id)}
-              className={`relative rounded-xl border p-4 transition-colors cursor-pointer ${
+              className={cn(
+                "relative rounded-2xl border p-4 transition-all cursor-pointer group",
                 n.is_read
-                  ? "bg-background border-border"
-                  : "bg-primary/5 border-primary/20"
-              }`}
+                  ? "bg-white border-slate-100 opacity-75"
+                  : "bg-white border-[#2BBE9A]/20 shadow-sm shadow-[#2BBE9A]/5"
+              )}
             >
               {!n.is_read && (
-                <span className="absolute top-3 right-3 w-2 h-2 rounded-full bg-primary" />
+                <span className="absolute top-4 right-4 w-2 h-2 rounded-full bg-[#2BBE9A]" />
               )}
-              <div className="flex items-start gap-3">
-                <Bell className="w-4 h-4 mt-0.5 text-muted-foreground shrink-0" />
-                <div className="min-w-0 space-y-1">
+              <div className="flex items-start gap-4">
+                <div className={cn(
+                  "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
+                  n.is_read ? "bg-slate-50" : "bg-[#2BBE9A]/10"
+                )}>
+                  <Bell className={cn(
+                    "w-5 h-5",
+                    n.is_read ? "text-slate-400" : "text-[#2BBE9A]"
+                  )} />
+                </div>
+                <div className="min-w-0 flex-1 space-y-2">
                   <div className="flex items-center gap-2">
                     <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                        TYPE_COLORS[n.type ?? "general"] ??
-                        "bg-gray-100 text-gray-600"
-                      }`}
+                      className={cn(
+                        "text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-tight border",
+                        TYPE_CONFIG[n.type ?? "general"]?.className || "bg-slate-50 text-slate-600 border-slate-100"
+                      )}
                     >
-                      {TYPE_LABELS[n.type ?? "general"] ?? "Notice"}
+                      {TYPE_CONFIG[n.type ?? "general"]?.label || "Notice"}
                     </span>
-                    <span className="text-xs text-muted-foreground">
-                      {format(new Date(n.created_at), "dd MMM, h:mm a")}
+                    <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
+                      {format(new Date(n.created_at), "MMM dd, h:mm a")}
                     </span>
                   </div>
-                  <p className="text-sm">{n.message}</p>
+                  <p className={cn(
+                    "text-sm leading-relaxed",
+                    n.is_read ? "text-slate-500 font-medium" : "text-[#1F3A5F] font-bold"
+                  )}>
+                    {n.message}
+                  </p>
                 </div>
               </div>
             </div>

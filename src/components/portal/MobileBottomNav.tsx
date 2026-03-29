@@ -2,31 +2,42 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Home, FileText, Wrench, Bell, User } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const links = [
+  { href: "/home", label: "Home", icon: Home },
+  { href: "/lease", label: "Lease", icon: FileText },
+  { href: "/maintenance", label: "Fix", icon: Wrench },
+  { href: "/notifications", label: "Alerts", icon: Bell },
+  { href: "/profile", label: "Profile", icon: User },
+];
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
 
-  const links = [
-    { href: "/home", label: "Home", icon: "🏠" },
-    { href: "/lease", label: "Lease", icon: "📄" },
-    { href: "/maintenance", label: "Maintenance", icon: "🔧" },
-    { href: "/notifications", label: "Alerts", icon: "🔔" },
-  ];
-
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-2 z-10">
-      {links.map((link) => (
-        <Link
-          key={link.href}
-          href={link.href}
-          className={`flex flex-col items-center text-sm ${
-            pathname === link.href ? "text-blue-600" : "text-gray-500"
-          }`}
-        >
-          <span className="text-xl">{link.icon}</span>
-          <span>{link.label}</span>
-        </Link>
-      ))}
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white border-t border-slate-200 flex justify-around items-center h-16 z-50 px-4">
+      {links.map((link) => {
+        const Icon = link.icon;
+        const isActive = pathname === link.href || (link.href !== "/home" && pathname.startsWith(link.href));
+        
+        return (
+          <Link
+            key={link.href}
+            href={link.href}
+            className={cn(
+              "flex flex-col items-center justify-center space-y-1 transition-colors w-full h-full",
+              isActive ? "text-[#2BBE9A]" : "text-[#1F3A5F]/60 hover:text-[#1F3A5F]"
+            )}
+          >
+            <Icon className={cn("w-5 h-5", isActive && "stroke-[2.5px]")} />
+            <span className="text-[10px] font-medium uppercase tracking-wider">
+              {link.label}
+            </span>
+          </Link>
+        );
+      })}
     </nav>
   );
 }
