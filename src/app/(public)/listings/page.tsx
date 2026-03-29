@@ -2,15 +2,15 @@ import { createClient } from '@supabase/supabase-js';
 import ListingCard from '@/components/marketplace/ListingCard';
 import { Search } from 'lucide-react';
 
-// Force Next.js to re-fetch this page regularly so new listings show up quickly
-export const revalidate = 60; 
+// 🔥 FIX: Force dynamic rendering so Vercel doesn't crash trying to fetch DB data during the build
+export const dynamic = 'force-dynamic';
 
 export default async function PublicListingsPage() {
   // Use the public Anon key since this is a public-facing page
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
   // Fetch only PUBLISHED listings
   const { data: listings, error } = await supabase
@@ -69,5 +69,3 @@ export default async function PublicListingsPage() {
     </div>
   );
 }
-
-//----------------------------------------testing snippets----------------------------------------
