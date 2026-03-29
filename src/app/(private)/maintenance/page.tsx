@@ -84,7 +84,7 @@ export default async function MaintenancePage() {
                       <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1">
                         <span className="flex items-center gap-1">
                           <span className={cn("w-1.5 h-1.5 rounded-full", req.priority === 'emergency' ? 'bg-rose-500' : 'bg-slate-300')} />
-                          <span className={PRIORITY_STYLES[req.priority]}>{req.priority} priority</span>
+                          <span className={PRIORITY_STYLES[req.priority as MaintenancePriority]}>{req.priority} priority</span>
                         </span>
                         <span>{format(new Date(req.created_at), "MMM dd, yyyy")}</span>
                       </div>

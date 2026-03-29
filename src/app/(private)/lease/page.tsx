@@ -105,8 +105,16 @@ export default async function LeasePage() {
       <Card className="border-none shadow-sm bg-white rounded-xl overflow-hidden">
         <CardContent className="p-0">
           <div className="divide-y divide-slate-50">
-            <InfoRow label="Unit" value={lease.unit?.unit_code || "—"} />
-            <InfoRow label="Building" value={lease.unit?.building?.name || "—"} />
+            {(() => {
+              const unit = Array.isArray(lease.unit) ? lease.unit[0] : lease.unit;
+              const building = Array.isArray(unit?.building) ? unit.building[0] : unit?.building;
+              return (
+                <>
+                  <InfoRow label="Unit" value={unit?.unit_code || "—"} />
+                  <InfoRow label="Building" value={building?.name || "—"} />
+                </>
+              );
+            })()}
             <InfoRow label="Start Date" value={formatDate(lease.lease_start)} />
             <InfoRow label="Base Rent" value={formatCurrency(lease.rent_amount)} />
             {lease.service_charge !== null && (
