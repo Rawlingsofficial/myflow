@@ -1,4 +1,4 @@
-// src/app/api/webhooks/clerk/route.ts  (TENANT APP)
+// src/app/api/webhooks/clerk/route.ts
 // Identical structure to landlord webhook, but sets role = "tenant"
 // and does NOT create an organization membership.
 
@@ -12,7 +12,8 @@ export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
   if (!WEBHOOK_SECRET) throw new Error("CLERK_WEBHOOK_SECRET not set");
 
-  const headerPayload = headers();
+  // 🔥 FIX: In Next.js 15+, headers() must be awaited!
+  const headerPayload = await headers();
   const svix_id = headerPayload.get("svix-id");
   const svix_timestamp = headerPayload.get("svix-timestamp");
   const svix_signature = headerPayload.get("svix-signature");
@@ -63,8 +64,6 @@ export async function POST(req: Request) {
       .single();
 
     // 3. Link user row to tenant record IF a tenant with this email exists
-    //    (Landlord creates tenant record first with email; when tenant signs up
-    //     their user_id gets linked automatically here.)
     if (userRow) {
       await supabase
         .from("tenants")
