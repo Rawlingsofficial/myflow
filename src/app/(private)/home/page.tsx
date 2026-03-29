@@ -55,8 +55,15 @@ export default async function HomePage() {
             Hi, {tenant?.first_name || "there"} 👋
           </h1>
           <p className="text-sm text-slate-500 font-medium">
-             {lease?.unit?.building?.name || "Welcome to MyFlow"} 
-             {lease?.unit?.unit_code && ` • Unit ${lease.unit.unit_code}`}
+             {(() => {
+               const unit = Array.isArray(lease?.unit) ? lease.unit[0] : lease?.unit;
+               const building = Array.isArray(unit?.building) ? unit.building[0] : unit?.building;
+               return building?.name || "Welcome to MyFlow";
+             })()} 
+             {(() => {
+               const unit = Array.isArray(lease?.unit) ? lease.unit[0] : lease?.unit;
+               return unit?.unit_code && ` • Unit ${unit.unit_code}`;
+             })()}
           </p>
         </div>
         <div className="relative">
@@ -195,18 +202,25 @@ export default async function HomePage() {
           </div>
           <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden">
               <CardContent className="p-4 grid grid-cols-3 gap-4">
-                <div className="text-center">
-                    <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Type</p>
-                    <p className="text-xs font-bold text-[#1F3A5F] truncate">{lease.unit?.unit_type || "Unit"}</p>
-                </div>
-                <div className="text-center border-x border-slate-50">
-                    <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Bedrooms</p>
-                    <p className="text-xs font-bold text-[#1F3A5F]">{lease.unit?.bedrooms || "0"}</p>
-                </div>
-                <div className="text-center">
-                    <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Area</p>
-                    <p className="text-xs font-bold text-[#1F3A5F]">{lease.unit?.area_sqm ? `${lease.unit.area_sqm}m²` : "—"}</p>
-                </div>
+                {(() => {
+                  const unit = Array.isArray(lease.unit) ? lease.unit[0] : lease.unit;
+                  return (
+                    <>
+                      <div className="text-center">
+                          <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Type</p>
+                          <p className="text-xs font-bold text-[#1F3A5F] truncate">{unit?.unit_type || "Unit"}</p>
+                      </div>
+                      <div className="text-center border-x border-slate-50">
+                          <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Bedrooms</p>
+                          <p className="text-xs font-bold text-[#1F3A5F]">{unit?.bedrooms || "0"}</p>
+                      </div>
+                      <div className="text-center">
+                          <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">Area</p>
+                          <p className="text-xs font-bold text-[#1F3A5F]">{unit?.area_sqm ? `${unit.area_sqm}m²` : "—"}</p>
+                      </div>
+                    </>
+                  );
+                })()}
               </CardContent>
           </Card>
         </section>
